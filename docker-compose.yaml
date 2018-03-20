@@ -1,0 +1,52 @@
+version: "3.2"
+services:
+  shadowsocks:
+    image: shadowsocks/shadowsocks-libev:${SHADOWSOCKS_TAG}
+    restart: unless-stopped
+    ports:
+      - protocol: tcp
+        published: ${SHADOWSOCKS_PORT}
+        target: 8388
+      - protocol: udp
+        published: ${SHADOWSOCKS_PORT}
+        target: 8388
+    environment:
+      - PASSWORD=${SHADOWSOCKS_KEY}
+      - METHOD=${SHADOWSOCKS_METHOD}
+  
+  kcptun:
+    image: xtaci/kcptun:${KCPTUN_TAG}
+    restart: unless-stopped
+    depends_on:
+      - shadowsocks
+    links:
+      - shadowsocks:shadowsocks
+    ports:
+      - protocol: udp
+        published: ${KCPTUN_PORT}
+        target: 4000
+    command: [
+      "server",
+      "--target",
+      "shadowsocks:8388",
+      "--listen",
+      "0.0.0.0:4000",
+      "--key", 
+      "${KCPTUN_KEY}",
+      "--crypt",
+      "${KCPTUN_CRYPT}",
+      "--mode",
+      "${KCPTUN_MODE}",
+      "--mtu", 
+      "${KCPTUN_MTU}",
+      "--sndwnd",
+      "${KCPTUN_SND}",
+      "--rcvwnd",
+      "${KCPTUN_RCV}",
+      "--datashard",
+      "${KCPTUN_DS}",
+      "--parityshard",
+      "${KCPTUN_PS}",
+      "--dscp",
+      "${KCPTUN_DSCP}"
+    ]
